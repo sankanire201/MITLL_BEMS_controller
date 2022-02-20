@@ -9,8 +9,8 @@ import sys
 from volttron.platform.agent import utils
 from volttron.platform.agent.utils import get_platform_instance_name
 from volttron.platform.vip.agent import Agent, Core, RPC
-sys.path.insert(0, '/home/sanka/volttron/LoadShifting/loadShifting/Utility_Functions')
-sys.path.insert(0, '/home/sanka/volttron/LoadShifting/loadShifting/Core_Functions')
+sys.path.insert(0, '/home/pi/volttron/LoadShifting/loadShifting/Utility_Functions')
+sys.path.insert(0, '/home/pi/volttron/LoadShifting/loadShifting/Core_Functions')
 import ReadSchedule as r
 import LoadShifting as LS
 import netifaces as ni
@@ -76,8 +76,8 @@ class Loadshifting(Agent):
         # Hook self.configure up to changes to the configuration file "config".
 
         
-        csvpath='/home/sanka/volttron/LoadShifting/Loads.csv'
-        self.profilepath='/home/sanka/volttron/LoadShifting/Prof_P_csv.csv'
+        csvpath='/home/pi/volttron/LoadShifting/Loads.csv'
+        self.profilepath='/home/pi/volttron/LoadShifting/Prof_P_csv.csv'
         if os.path.isfile(csvpath):
             with open(csvpath, "r") as csv_device:
                  pass
@@ -98,7 +98,7 @@ class Loadshifting(Agent):
                         self.Pn_kW=int(Pn_kW)
                         self.PF=float(PF)
                         self.Building_type=Type
-                        self.profilepath='/home/sanka/volttron/LoadShifting/'+profile
+                        self.profilepath='/home/pi/volttron/LoadShifting/'+profile
                    
         else:
             # Device hasn't been created, or the path to this device is incorrect
