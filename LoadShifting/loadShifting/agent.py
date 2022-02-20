@@ -9,8 +9,8 @@ import sys
 from volttron.platform.agent import utils
 from volttron.platform.agent.utils import get_platform_instance_name
 from volttron.platform.vip.agent import Agent, Core, RPC
-sys.path.insert(0, '/home/pi/volttron/LoadShifting/loadShifting/Utility_Functions')
-sys.path.insert(0, '/home/pi/volttron/LoadShifting/loadShifting/Core_Functions')
+sys.path.insert(0, '/home/sanka/volttron/LoadShifting/loadShifting/Utility_Functions')
+sys.path.insert(0, '/home/sanka/volttron/LoadShifting/loadShifting/Core_Functions')
 import ReadSchedule as r
 import LoadShifting as LS
 import netifaces as ni
@@ -66,15 +66,18 @@ class Loadshifting(Agent):
         self.hour=0
         self.Sn_kVA=0
         self.Pn_kW=0
+        self.PF=0.95
         self.Building_type=''
+        self.differableLoadAmount=0
+        self.shiftedLoadAmount=0    
         self.instancename=get_platform_instance_name()
-        ni.ifaddresses('wlan0')
-        self.ip = ni.ifaddresses('wlan0')[ni.AF_INET][0]['addr']
+        ni.ifaddresses('ens160')
+        self.ip = ni.ifaddresses('ens160')[ni.AF_INET][0]['addr']
         # Hook self.configure up to changes to the configuration file "config".
-        self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
+
         
-        csvpath='/home/pi/volttron/LoadShifting/Loads.csv'
-        profilepath='/home/pi/volttron/LoadShifting/Prof_P_csv.csv'
+        csvpath='/home/sanka/volttron/LoadShifting/Loads.csv'
+        self.profilepath='/home/sanka/volttron/LoadShifting/Prof_P_csv.csv'
         if os.path.isfile(csvpath):
             with open(csvpath, "r") as csv_device:
                  pass
@@ -93,23 +96,20 @@ class Loadshifting(Agent):
                     if Instance_name==self.instancename:
                         self.Sn_kVA=int(Sn_kVA)
                         self.Pn_kW=int(Pn_kW)
+                        self.PF=float(PF)
                         self.Building_type=Type
-                        profilepath='/home/pi/volttron/LoadShifting/'+profile
-                    print(profilepath)
+                        self.profilepath='/home/sanka/volttron/LoadShifting/'+profile
                    
         else:
             # Device hasn't been created, or the path to this device is incorrect
-            raise RuntimeError("CSV device at {} does not exist".format(csv_path))
-        LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
-        PRIORITY_LIST={'CT1':1, 'CT2':2, 'CT3':2, 'CT4':1, 'CT5':1, 'CT6':6, 'CT7':7, 'CT8':8, 'CT9':9, 'CT10':0,'UT':1000}
-        THRESHOLD={0:25,1:22,2:22,3:22,4:23,5:24,6:25,7:26,8:27,9:28,10:22,11:22,12:25,13:23,14:14,15:15,16:21,17:17,18:18,19:22,20:22,21:22,22:23,23:24}
-        WINDOW=[(11,17)]
-            
-        schedule=r.ReadScheduleCSV(profilepath,LOADS)
-        self.schedule=schedule.read_rated_consumption()
-        loadshifter=LS.LoadShiftingGM(self.schedule,THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
-        self.updatedSchedule=loadshifter.get_updated_schedule()
-        self.core.periodic(5,self.dowork)
+            raise RuntimeError("CSV device at {} does not exist".format(csvpath))
+        THRESHOLD={0:25,1:22,2:22,3:22,4:23,5:24,6:25,7:26,8:27,9:28,10:22,11:22,12:25,13:23,14:20,15:20,16:25,17:17,18:18,19:22,20:22,21:22,22:23,23:24}
+        self.shiftload(THRESHOLD)
+        self.vip.config.set_default("config", self.default_config)
+        # Hook self.configure up to changes to the configuration file "config".
+        self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
+
+       # self.core.periodic(5,self.dowork)
 
     def configure(self, config_name, action, contents):
         """
@@ -150,8 +150,34 @@ class Loadshifting(Agent):
         """
         Callback triggered by the subscription setup using the topic from the agent's config file
         """
-        Print('####################################################Recieve Load Shifting ########################',topic,message)
+        print('###################################################Recieve Load Shifting ########################',topic,message)
+        if topic == 'GAMS/control/BEMS3/loadshifting':
+            self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()})
+        if topic == 'devices/campus/building/sync':
+            self.setload(self.updatedSchedule[message[0]['Hour']])
+    def setload(self,schedule):
+        temp={k:1 if v>0 else 0 for k,v in schedule.items()}
+        temp['CT10']=schedule['CT10']/self.Pn_kW
+        print('Setting Loads',temp,schedule)
+        for k in schedule.keys():
+            if k=='CT10':
+                tag='CMDC_'+k
+           #     result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,2).get(timeout=60)
+            else:
+                tag='CMDC_'+k
+              #  result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,schedule[k]).get(timeout=60)                
 
+    def shiftload(self,THRESHOLD):
+        Pn_kW=self.Pn_kW
+        LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
+        PRIORITY_LIST={'CT1':1, 'CT2':2, 'CT3':2, 'CT4':1, 'CT5':1, 'CT6':6, 'CT7':7, 'CT8':8, 'CT9':9, 'CT10':0,'UT':1000}
+        WINDOW=[(11,17)]        
+        schedule=r.ReadScheduleCSV(self.profilepath,LOADS)
+        self.schedule=schedule.read_rated_consumption()
+        loadshifter=LS.LoadShiftingGM(self.schedule,THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
+        self.updatedSchedule=loadshifter.get_updated_schedule()
+        self.differableLoadAmount=loadshifter.get_differableLoadAmount()
+        self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()     
     @Core.receiver("onstart")
     def onstart(self, sender, **kwargs):
         """
@@ -172,8 +198,8 @@ class Loadshifting(Agent):
         self.hour=1+self.hour
         if self.hour>=24:
             self.hour=0
-        print(self.ip,self.instancename,self.Building_type,"Current: Hour",self.hour, ": ",self.schedule[self.hour])       
-        print(self.ip,self.instancename,self.Building_type,"Updated: Hour",self.hour, ": ",self.updatedSchedule[self.hour])
+        print(self.instancename,self.Building_type,'Diferable',self.differableLoadAmount,'Shifted',self.shiftedLoadAmount,"Current: Hour",self.hour, ": ",self.schedule[self.hour])       
+        print(self.instancename,self.Building_type,'Diferable',self.differableLoadAmount,'Shifted',self.shiftedLoadAmount,"Updated: Hour",self.hour, ": ",self.updatedSchedule[self.hour])
 
     @Core.receiver("onstop")
     def onstop(self, sender, **kwargs):

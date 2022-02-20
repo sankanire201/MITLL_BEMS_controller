@@ -10,6 +10,10 @@ class LoadShifting(ABC):
         def get_schedule():
             pass
         def get_updated_schedule():
+            pass
+        def get_differableLoadAmount():
+            pass
+        def get_shiftedLoadAmount():
             pass        
         def set_threashhold(THRESHOLD):
             pass
@@ -43,6 +47,7 @@ class LoadShiftingGM(LoadShifting):
             self.__RATED_LOAD_CONSUMPTION=RATED_LOAD_CONSUMPTION
             self.__PRIORITY_LIST= self.__sort_priority_list(PRIORITY_LIST) 
             self.__differableLoadAmount=0
+            self.__shiftedLoadAmount=0
             self.__WINDOW=WINDOW
             self.__calc_total_rated_consumption()
             self.__shed_loads()
@@ -51,6 +56,10 @@ class LoadShiftingGM(LoadShifting):
             return(self.__schedule)
         def get_updated_schedule(self):
             return(self.__updatedSchedule)
+        def get_differableLoadAmount(self):
+            return(self.__differableLoadAmount)
+        def get_shiftedLoadAmount(self):
+            return(self.__shiftedLoadAmount)
         def set_threashhold(self,THRESHOLD):
             self.__THRESHOLD=THRESHOLD
         def set_schedule(self,schedule):
@@ -107,14 +116,14 @@ class LoadShiftingGM(LoadShifting):
             window=0
             current=[]
             threshold=[]
-            consumption=100
+            consumption=self.__RATED_LOAD_CONSUMPTION['CT1']
             for i in self.__WINDOW:
                 window=abs(i[0]-i[1])
                 current=self.__calc_window_consumption(i)
                 threshold=self.__calc_window_threshold(i)
             print(current,'current')
-            cons1 = {'type': 'ineq', 'fun': lambda x:  -np.sum(100*x)+self.__differableLoadAmount}
-            cons2 = {'type': 'ineq', 'fun': lambda x:  -x*100-current+threshold}
+            cons1 = {'type': 'ineq', 'fun': lambda x:  -np.sum(consumption*x)+self.__differableLoadAmount}
+            cons2 = {'type': 'ineq', 'fun': lambda x:  -x*consumption-current+threshold}
             bnds = []
             for k in range(0,window):
                 bnds.append((0,1))
@@ -123,7 +132,8 @@ class LoadShiftingGM(LoadShifting):
             for i in self.__WINDOW:
                 k=0
                 for p in range(i[0],i[1]):
-                    self.__updatedSchedule[p]['CT10']=self.__updatedSchedule[p]['CT10']+100*sol.x[k]
+                    self.__updatedSchedule[p]['CT10']=self.__updatedSchedule[p]['CT10']+consumption*sol.x[k]
                     k=k+1
-            print('After',self.__updatedSchedule)
+            self.__shiftedLoadAmount=np.sum(consumption*sol.x)
+            print(self.__shiftedLoadAmount,self.__differableLoadAmount,'After',self.__updatedSchedule)
             return self.__updatedSchedule
