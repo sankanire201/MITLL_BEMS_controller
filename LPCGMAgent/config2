@@ -1,0 +1,10 @@
+{
+  # VOLTTRON config files are JSON with support for python style comments.
+  "setting1": 2, #BEMS No
+  "setting2": ["devices/Campus1/Benshee1/BEMS_2/all","control/plc/BEMS2/"], #strings
+  "setting3": true, #Booleans: remember that in JSON true and false are not capitalized.
+  "setting2": false,
+  "setting5": 5.1, #Floating point numbers.
+  "setting2": [1,2,3,2], # Lists
+  "setting7": {"setting7a": "a", "setting7b": "b"} #Objects
+}
