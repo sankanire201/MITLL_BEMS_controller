@@ -104,10 +104,11 @@ class Loadshifting(Agent):
             # Device hasn't been created, or the path to this device is incorrect
             raise RuntimeError("CSV device at {} does not exist".format(csvpath))
         THRESHOLD={0:25,1:22,2:22,3:22,4:23,5:24,6:25,7:26,8:27,9:28,10:22,11:22,12:25,13:23,14:20,15:20,16:25,17:17,18:18,19:22,20:22,21:22,22:23,23:24}
-        self.shiftload(THRESHOLD)
+       
         self.vip.config.set_default("config", self.default_config)
         # Hook self.configure up to changes to the configuration file "config".
         self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
+#        self.shiftload(THRESHOLD)
 
        # self.core.periodic(5,self.dowork)
 
@@ -180,11 +181,15 @@ class Loadshifting(Agent):
         WINDOW=[(11,17)]        
         schedule=r.ReadScheduleCSV(self.profilepath,LOADS)
         self.schedule=schedule.read_rated_consumption()
-        print('Original',self.schedule)
+        print('Original',self.instancename,self.schedule)
         loadshifter=LS.LoadShiftingGM(self.schedule,THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
         self.updatedSchedule=loadshifter.get_updated_schedule()
         self.differableLoadAmount=loadshifter.get_differableLoadAmount()
-        self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()     
+        self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()
+        message={'DifferableLoadAmount': self.differableLoadAmount,'ShiftedLoadAmount':self.shiftedLoadAmount,'ShiftedSchedule': self.updatedSchedule,'Threashhold':THRESHOLD}
+        self.publishcontrollerstatus(message)     
+    def publishcontrollerstatus(self,Message):
+        result = self.vip.pubsub.publish(peer='pubsub',topic= 'devices/control/'+self.instancename+'/ControllerData/LS', message=Message)
     @Core.receiver("onstart")
     def onstart(self, sender, **kwargs):
         """
