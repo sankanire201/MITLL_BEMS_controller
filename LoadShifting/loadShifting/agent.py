@@ -110,7 +110,7 @@ class Loadshifting(Agent):
         self.vip.config.set_default("config", self.default_config)
         # Hook self.configure up to changes to the configuration file "config".
         self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
-#        self.shiftload(THRESHOLD)
+        self.shiftload(THRESHOLD,'Initiate')
 
        # self.core.periodic(5,self.dowork)
 
@@ -176,7 +176,7 @@ class Loadshifting(Agent):
                 tag='CMDC_G'+k.split('T')[1]
                 result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,temp[k]).get(timeout=60)                
                 print('seting................',tag,temp[k],result,hour,self.Pn_kW,'Differable Amount:',self.differableLoadAmount,'Shifted Amount:',self.shiftedLoadAmount)
-    def shiftload(self,THRESHOLD):
+    def shiftload(self,THRESHOLD,initiate='None'):
         Pn_kW=self.Pn_kW
         LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
         PRIORITY_LIST={'CT1':1, 'CT2':2, 'CT3':2, 'CT4':1, 'CT5':1, 'CT6':6, 'CT7':7, 'CT8':8, 'CT9':9, 'CT10':0,'UT':1000}
@@ -189,7 +189,10 @@ class Loadshifting(Agent):
         self.differableLoadAmount=loadshifter.get_differableLoadAmount()
         self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()
         message={'DifferableLoadAmount': self.differableLoadAmount,'ShiftedLoadAmount':self.shiftedLoadAmount,'ShiftedSchedule': self.updatedSchedule,'Threashhold':THRESHOLD}
-        self.publishcontrollerstatus(message)     
+        if initiate=='Initiate':
+            pass
+        else:
+            self.publishcontrollerstatus(message)     
     def publishcontrollerstatus(self,Message):
         result = self.vip.pubsub.publish(peer='pubsub',topic= 'devices/control/'+self.instancename+'/ControllerData/LS', message=Message)
     @Core.receiver("onstart")
