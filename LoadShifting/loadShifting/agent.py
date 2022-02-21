@@ -73,6 +73,7 @@ class Loadshifting(Agent):
         self.instancename=get_platform_instance_name()
         self.updatedSchedule={}
         self.schedule={}
+        self.prevhour=0
         ni.ifaddresses('wlan0')
         self.ip = ni.ifaddresses('wlan0')[ni.AF_INET][0]['addr']
         # Hook self.configure up to changes to the configuration file "config".
@@ -158,7 +159,11 @@ class Loadshifting(Agent):
             print('###################################################Recieve shifting ########################',topic,message)
             self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()})
         if topic == 'devices/campus/building/sync/all':
-            self.setload(self.updatedSchedule[message[0]['Hour']],message[0]['Hour'])
+            if self.prevhour==message[0]['Hour']:
+                pass
+            else:
+                self.setload(self.updatedSchedule[message[0]['Hour']],message[0]['Hour'])
+                self.prevhour=message[0]['Hour']
     def setload(self,schedule,hour):
         temp={k:1 if v>0 else 0 for k,v in schedule.items()}
         temp['CT10']=schedule['CT10']/self.Pn_kW
