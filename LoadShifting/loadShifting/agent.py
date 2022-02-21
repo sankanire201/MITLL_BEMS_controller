@@ -72,7 +72,7 @@ class Loadshifting(Agent):
         self.shiftedLoadAmount=0    
         self.instancename=get_platform_instance_name()
         self.updatedSchedule={}
-        self.schedule{}
+        self.schedule={}
         ni.ifaddresses('wlan0')
         self.ip = ni.ifaddresses('wlan0')[ni.AF_INET][0]['addr']
         # Hook self.configure up to changes to the configuration file "config".
