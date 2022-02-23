@@ -111,7 +111,7 @@ class Loadshifting(Agent):
         self.vip.config.set_default("config", self.default_config)
         # Hook self.configure up to changes to the configuration file "config".
         self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
-        self.shiftload(THRESHOLD,'Initiate')
+        self.shiftload(THRESHOLD,Day,'Initiate')
 
        # self.core.periodic(5,self.dowork)
 
@@ -157,7 +157,7 @@ class Loadshifting(Agent):
     #    print('###################################################Recieve Load Shifting ########################',topic,message)
         if topic == 'devices/GAMS/control/'+self.instancename+'/loadshifting':
             print('###################################################Recieve shifting ########################',topic,message)
-            self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Hour']))
+            self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Day']))
         if topic == 'devices/campus/building/sync/all':
             if self.prevhour==message[0]['Hour']:
                 pass
@@ -181,19 +181,19 @@ class Loadshifting(Agent):
                 tag='CMDC_G'+k.split('T')[1]
                 result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,temp[k]).get(timeout=60)                
                 print('seting................',tag,temp[k],result,hour,self.Pn_kW,'Differable Amount:',self.differableLoadAmount,'Shifted Amount:',self.shiftedLoadAmount)
-    def shiftload(self,THRESHOLD,initiate='None'):
+    def shiftload(self,THRESHOLD,Day,initiate='None'):
         Pn_kW=self.Pn_kW
         LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
         PRIORITY_LIST={'CT1':1, 'CT2':2, 'CT3':2, 'CT4':1, 'CT5':1, 'CT6':6, 'CT7':7, 'CT8':8, 'CT9':9, 'CT10':0,'UT':1000}
         WINDOW=[(11,17)]        
         schedule=r.ReadScheduleCSV(self.profilepath,LOADS,7)
         self.schedule=schedule.read_rated_consumption()
-        print('Original',self.instancename,self.schedule)
-        #loadshifter=LS.LoadShiftingGM(self.schedule,THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
-        #self.updatedSchedule=loadshifter.get_updated_schedule()
-        #self.differableLoadAmount=loadshifter.get_differableLoadAmount()
-        #self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()
-       # message={'DifferableLoadAmount': self.differableLoadAmount,'ShiftedLoadAmount':self.shiftedLoadAmount,'ShiftedSchedule': self.updatedSchedule,'Threashhold':THRESHOLD}
+        print('Original',self.instancename,self.schedule[Day])
+        loadshifter=LS.LoadShiftingGM(self.schedule[Day],THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
+        self.updatedSchedule=loadshifter.get_updated_schedule()
+        self.differableLoadAmount=loadshifter.get_differableLoadAmount()
+        self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()
+        message={'DifferableLoadAmount': self.differableLoadAmount,'ShiftedLoadAmount':self.shiftedLoadAmount,'ShiftedSchedule': self.updatedSchedule,'Threashhold':THRESHOLD}
         if initiate=='Initiate':
             pass
         else:
