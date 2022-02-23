@@ -105,7 +105,7 @@ class LoadShiftingGM(LoadShifting):
                             self.__updatedSchedule[i][j[0]]=0
                             if penalty >0:
                                 break
-                            self.__updatedSchedule[i][j[0]]=0                        
+                            #self.__updatedSchedule[i][j[0]]=0                        
                         if penalty >=0:
                                 break
                self.__updatedTotalConsumption[i]=sum(self.__updatedSchedule[i].values())-self.__updatedSchedule[i]['UT']
