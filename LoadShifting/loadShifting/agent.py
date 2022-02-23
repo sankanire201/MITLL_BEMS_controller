@@ -74,7 +74,6 @@ class Loadshifting(Agent):
         self.updatedSchedule={}
         self.schedule={}
         self.prevhour=-1
-        self.Threashhold={}
         ni.ifaddresses('wlan0')
         self.ip = ni.ifaddresses('wlan0')[ni.AF_INET][0]['addr']
         # Hook self.configure up to changes to the configuration file "config".
@@ -108,7 +107,7 @@ class Loadshifting(Agent):
             # Device hasn't been created, or the path to this device is incorrect
             raise RuntimeError("CSV device at {} does not exist".format(csvpath))
         THRESHOLD={0:25,1:22,2:22,3:22,4:23,5:24,6:25,7:26,8:27,9:28,10:22,11:22,12:25,13:23,14:20,15:20,16:25,17:17,18:18,19:22,20:22,21:22,22:23,23:24}
-        self.Threashhold=THRESHOLD
+       
         self.vip.config.set_default("config", self.default_config)
         # Hook self.configure up to changes to the configuration file "config".
         self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
@@ -158,7 +157,7 @@ class Loadshifting(Agent):
     #    print('###################################################Recieve Load Shifting ########################',topic,message)
         if topic == 'devices/GAMS/control/'+self.instancename+'/loadshifting':
             print('###################################################Recieve shifting ########################',topic,message)
-            self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()})
+            self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Hour']))
         if topic == 'devices/campus/building/sync/all':
             if self.prevhour==message[0]['Hour']:
                 pass
@@ -167,8 +166,6 @@ class Loadshifting(Agent):
                 self.prevhour=message[0]['Hour']
     def setload(self,schedule,hour):
         temp={k:1 if v>0 else 0 for k,v in schedule.items()}
-        Message=[{'Threashhold':self.Threashhold[hour]}{'unit':'kw'}]
-        result=self.vip.rpc.call('platform.driver','set_point', 'dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver/',tag,message=Message).get(timeout=60)  
         temp['CT10']=schedule['CT10']/self.Pn_kW
         print('Setting Loads',temp,schedule)
         for k in temp.keys():
@@ -185,23 +182,22 @@ class Loadshifting(Agent):
                 result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,temp[k]).get(timeout=60)                
                 print('seting................',tag,temp[k],result,hour,self.Pn_kW,'Differable Amount:',self.differableLoadAmount,'Shifted Amount:',self.shiftedLoadAmount)
     def shiftload(self,THRESHOLD,initiate='None'):
-        self.Threashhold=THRESHOLD
         Pn_kW=self.Pn_kW
         LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
         PRIORITY_LIST={'CT1':1, 'CT2':2, 'CT3':2, 'CT4':1, 'CT5':1, 'CT6':6, 'CT7':7, 'CT8':8, 'CT9':9, 'CT10':0,'UT':1000}
         WINDOW=[(11,17)]        
-        schedule=r.ReadScheduleCSV(self.profilepath,LOADS)
+        schedule=r.ReadScheduleCSV(self.profilepath,LOADS,7)
         self.schedule=schedule.read_rated_consumption()
         print('Original',self.instancename,self.schedule)
-        loadshifter=LS.LoadShiftingGM(self.schedule,THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
-        self.updatedSchedule=loadshifter.get_updated_schedule()
-        self.differableLoadAmount=loadshifter.get_differableLoadAmount()
-        self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()
-        message={'DifferableLoadAmount': self.differableLoadAmount,'ShiftedLoadAmount':self.shiftedLoadAmount,'ShiftedSchedule': self.updatedSchedule,'Threashhold':THRESHOLD}
+        #loadshifter=LS.LoadShiftingGM(self.schedule,THRESHOLD,PRIORITY_LIST,LOADS,WINDOW)
+        #self.updatedSchedule=loadshifter.get_updated_schedule()
+        #self.differableLoadAmount=loadshifter.get_differableLoadAmount()
+        #self.shiftedLoadAmount=loadshifter.get_shiftedLoadAmount()
+       # message={'DifferableLoadAmount': self.differableLoadAmount,'ShiftedLoadAmount':self.shiftedLoadAmount,'ShiftedSchedule': self.updatedSchedule,'Threashhold':THRESHOLD}
         if initiate=='Initiate':
             pass
         else:
-            self.publishcontrollerstatus(message)     
+         #   self.publishcontrollerstatus(message)     
     def publishcontrollerstatus(self,Message):
         result = self.vip.pubsub.publish(peer='pubsub',topic= 'devices/control/'+self.instancename+'/ControllerData/LS', message=Message)
     @Core.receiver("onstart")

@@ -19,12 +19,13 @@ class Readschedule(ABC):
 
     
 class ReadScheduleCSV(Readschedule):
-    def __init__(self,CSV_PATH,LOADS):
+    def __init__(self,CSV_PATH,LOADS,DAYS):
         self.__CSV_PATH=CSV_PATH
         self.__LOADS = LOADS
         self.__scheduleRatedConsumption={}
         self.__scheduleStates={}
-        self.__prioritylist={}      
+        self.__prioritylist={}
+        self.__DAYS=DAYS
     def get_schedule_rated_consumption(self):
         return self.__scheduleRatedConsumption
     def get_schedule_states(self):
@@ -32,15 +33,18 @@ class ReadScheduleCSV(Readschedule):
     def get_priority_list(self):
         return self.__prioritylist    
     def read_rated_consumption(self):
+        
         if os.path.isfile(self.__CSV_PATH):
             with open(self.__CSV_PATH, "r") as csvDevice:
                 self.csvReader = DictReader(csvDevice)
+                for j in range(1,self.DAYS+1):
+                    self.__scheduleRatedConsumption[j]={}
                 for point in self.csvReader:
                     tempRow={}
                     for i in point:
                         if i in self.__LOADS:
                             tempRow[i]=float(self.__LOADS[i])*float(point[i])                 
-                    self.__scheduleRatedConsumption[int(point.get('Time'))]=tempRow
+                    self.__scheduleRatedConsumption[int(point.get('Day')][int(point.get('Hour'))]=tempRow
         else:
             raise RuntimeError("CSV device at {} does not exist".format(self.__CSV_PATH))
         return self.__scheduleRatedConsumption
