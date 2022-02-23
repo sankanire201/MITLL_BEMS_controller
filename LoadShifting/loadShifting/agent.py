@@ -197,6 +197,7 @@ class Loadshifting(Agent):
         if initiate=='Initiate':
             pass
         else:
+            pass
          #   self.publishcontrollerstatus(message)     
     def publishcontrollerstatus(self,Message):
         result = self.vip.pubsub.publish(peer='pubsub',topic= 'devices/control/'+self.instancename+'/ControllerData/LS', message=Message)

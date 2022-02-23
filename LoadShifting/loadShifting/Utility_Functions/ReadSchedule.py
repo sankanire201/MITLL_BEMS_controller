@@ -44,7 +44,7 @@ class ReadScheduleCSV(Readschedule):
                     for i in point:
                         if i in self.__LOADS:
                             tempRow[i]=float(self.__LOADS[i])*float(point[i])                 
-                    self.__scheduleRatedConsumption[int(point.get('Day')][int(point.get('Hour'))]=tempRow
+                    self.__scheduleRatedConsumption[int(point.get('Day'))][int(point.get('Hour'))]=tempRow
         else:
             raise RuntimeError("CSV device at {} does not exist".format(self.__CSV_PATH))
         return self.__scheduleRatedConsumption
