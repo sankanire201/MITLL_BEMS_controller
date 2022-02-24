@@ -37,7 +37,7 @@ class ReadScheduleCSV(Readschedule):
         if os.path.isfile(self.__CSV_PATH):
             with open(self.__CSV_PATH, "r") as csvDevice:
                 self.csvReader = DictReader(csvDevice)
-                for j in range(1,self.DAYS+1):
+                for j in range(1,self.__DAYS+1):
                     self.__scheduleRatedConsumption[j]={}
                 for point in self.csvReader:
                     tempRow={}

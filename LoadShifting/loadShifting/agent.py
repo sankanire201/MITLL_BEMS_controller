@@ -112,7 +112,7 @@ class Loadshifting(Agent):
         self.vip.config.set_default("config", self.default_config)
         # Hook self.configure up to changes to the configuration file "config".
         self.vip.config.subscribe(self.configure, actions=["NEW", "UPDATE"], pattern="config")
-        self.shiftload(THRESHOLD,Day,'Initiate')
+        self.shiftload(THRESHOLD,1,'Initiate')
 
        # self.core.periodic(5,self.dowork)
 
@@ -159,8 +159,8 @@ class Loadshifting(Agent):
         if topic == 'devices/GAMS/control/'+self.instancename+'/loadshifting':
             print('###################################################Recieve shifting ########################',topic,message)
             self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Day']))
-            Message={'Threashhold':message[0]['Threashhold']}{'unit':'kw'}
-            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message]).get(timeout=60)                
+            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
+            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
 
         if topic == 'devices/campus/building/sync/all':
             if self.prevhour==message[0]['Hour']:
@@ -172,8 +172,8 @@ class Loadshifting(Agent):
         temp={k:1 if v>0 else 0 for k,v in schedule.items()}
         temp['CT10']=schedule['CT10']/self.Pn_kW
         print('Setting Loads',temp,schedule)
-        Message={'Threashhold':self.Threashhold[hour]}{'unit':'kw'}
-        result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message]).get(timeout=60)                
+        Message=[{'Threashhold':self.Threashhold[hour]},{'unit':'kw'}]
+        result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
 
         for k in temp.keys():
             if k=='CT10':
