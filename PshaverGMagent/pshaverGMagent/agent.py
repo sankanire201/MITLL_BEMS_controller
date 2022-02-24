@@ -141,9 +141,10 @@ class Pshavergmagent(Agent):
 
         if shedding > -50000 and shedding < -3:
             
-           topics='control/plc/BEMS'+str(self.BEMStag)+'/increment'
-           result = self.vip.pubsub.publish(peer='pubsub',topic=topics,message=abs(shedding))
-           print("PShaver_Start increment*************************",abs(shedding),self.Peakshaverthreashhold)
+           ##topics='control/plc/BEMS'+str(self.BEMStag)+'/increment'
+           ##result = self.vip.pubsub.publish(peer='pubsub',topic=topics,message=abs(shedding))
+           ##print("PShaver_Start increment*************************",abs(shedding),self.Peakshaverthreashhold)
+           ## uncoment above 2 lines for incremental control
            #topics = "devices/Centralcontrol/Control/Peakshaver/all"
            #Message={"building_status":0 ,"Shedding_Threashold":abs(shedding)}
            #result = self.vip.pubsub.publish(peer='pubsub',topic=topics, headers=header,message= Message)          

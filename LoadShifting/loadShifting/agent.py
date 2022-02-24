@@ -159,15 +159,14 @@ class Loadshifting(Agent):
         if topic == 'devices/GAMS/control/'+self.instancename+'/loadshifting':
             print('###################################################Recieve shifting ########################',topic,message)
             self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Day']))
-            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
-            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
-
         if topic == 'devices/campus/building/sync/all':
             if self.prevhour==message[0]['Hour']:
                 pass
             else:
                 self.setload(self.updatedSchedule[message[0]['Hour']],message[0]['Hour'])
                 self.prevhour=message[0]['Hour']
+            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
+            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
     def setload(self,schedule,hour):
         temp={k:1 if v>0 else 0 for k,v in schedule.items()}
         temp['CT10']=schedule['CT10']/self.Pn_kW
