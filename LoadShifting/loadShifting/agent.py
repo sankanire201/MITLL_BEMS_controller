@@ -159,20 +159,19 @@ class Loadshifting(Agent):
         if topic == 'devices/GAMS/control/'+self.instancename+'/loadshifting':
             print('###################################################Recieve shifting ########################',topic,message)
             self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Day']))
+            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
+            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
+
         if topic == 'devices/campus/building/sync/all':
             if self.prevhour==message[0]['Hour']:
                 pass
             else:
                 self.setload(self.updatedSchedule[message[0]['Hour']],message[0]['Hour'])
                 self.prevhour=message[0]['Hour']
-            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
-            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
     def setload(self,schedule,hour):
         temp={k:1 if v>0 else 0 for k,v in schedule.items()}
         temp['CT10']=schedule['CT10']/self.Pn_kW
         print('Setting Loads',temp,schedule)
-        Message=[{'Threashhold':self.Threashhold[hour]},{'unit':'kw'}]
-        result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
 
         for k in temp.keys():
             if k=='CT10':
@@ -187,6 +186,9 @@ class Loadshifting(Agent):
                 tag='CMDC_G'+k.split('T')[1]
                 result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,temp[k]).get(timeout=60)                
                 print('seting................',tag,temp[k],result,hour,self.Pn_kW,'Differable Amount:',self.differableLoadAmount,'Shifted Amount:',self.shiftedLoadAmount)
+            Message=[{'Threashhold':self.Threashhold[hour]},{'unit':'kw'}]
+            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
+
     def shiftload(self,THRESHOLD,Day,initiate='None'):
         Pn_kW=self.Pn_kW
         LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
