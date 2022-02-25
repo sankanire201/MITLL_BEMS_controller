@@ -140,7 +140,7 @@ class Pshavergmagent(Agent):
            #result = self.vip.pubsub.publish(peer='pubsub',topic=topics, headers=header,message= Message)          
 
         if shedding > -50000 and shedding < -3:
-            
+             pass
            ##topics='control/plc/BEMS'+str(self.BEMStag)+'/increment'
            ##result = self.vip.pubsub.publish(peer='pubsub',topic=topics,message=abs(shedding))
            ##print("PShaver_Start increment*************************",abs(shedding),self.Peakshaverthreashhold)
