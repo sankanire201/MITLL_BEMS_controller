@@ -159,8 +159,8 @@ class Loadshifting(Agent):
         if topic == 'devices/GAMS/control/'+self.instancename+'/loadshifting':
             print('###################################################Recieve shifting ########################',topic,message)
             self.shiftload({int(k):int(v) for k,v in message[0]['Threashhold'].items()},int(message[0]['Day']))
-            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
-            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
+#            Message=[{'Threashhold':message[0]['Threashhold']},{'unit':'kw'}]
+ #           result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
 
         if topic == 'devices/campus/building/sync/all':
             if self.prevhour==message[0]['Hour']:
@@ -186,8 +186,8 @@ class Loadshifting(Agent):
                 tag='CMDC_G'+k.split('T')[1]
                 result=self.vip.rpc.call('platform.driver','set_point', 'Campus1/Benshee1/'+self.instancename,tag,temp[k]).get(timeout=60)                
                 print('seting................',tag,temp[k],result,hour,self.Pn_kW,'Differable Amount:',self.differableLoadAmount,'Shifted Amount:',self.shiftedLoadAmount)
-            Message=[{'Threashhold':self.Threashhold[hour]},{'unit':'kw'}]
-            result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
+        Message=[{'Threashhold':self.Threashhold[hour]},{'unit':'kw'}]
+        result=self.vip.pubsub.publish(peer='pubsub',topic='dataconcentrator/devices/control/'+self.instancename.split('_')[0]+self.instancename.split('_')[1]+'/PeakShaver',message=Message).get(timeout=60)                
 
     def shiftload(self,THRESHOLD,Day,initiate='None'):
         Pn_kW=self.Pn_kW
