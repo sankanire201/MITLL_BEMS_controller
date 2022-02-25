@@ -193,7 +193,7 @@ class Loadshifting(Agent):
         Pn_kW=self.Pn_kW
         LOADS={'CT1':Pn_kW, 'CT2':Pn_kW, 'CT3':Pn_kW, 'CT4':Pn_kW, 'CT5':Pn_kW, 'CT6':Pn_kW, 'CT7':Pn_kW, 'CT8':Pn_kW, 'CT9':Pn_kW, 'CT10':Pn_kW,'UT':2000}
         PRIORITY_LIST={'CT1':1, 'CT2':2, 'CT3':2, 'CT4':1, 'CT5':1, 'CT6':6, 'CT7':7, 'CT8':8, 'CT9':9, 'CT10':0,'UT':1000}
-        WINDOW=[(11,17)]
+        WINDOW=[(20,23)]
         self.Threashhold=THRESHOLD
         schedule=r.ReadScheduleCSV(self.profilepath,LOADS,7)
         self.schedule=schedule.read_rated_consumption()
