@@ -35,7 +35,7 @@ def pshaverGMagent(config_path, **kwargs):
     if not config:
         _log.info("Using Agent defaults for starting configuration.")
 
-    setting1 = int(config.get('setting1', 1))
+    setting1 = config.get('setting1', 1)
     setting2 = config.get('setting2', "some/random/topic")
 
     return Pshavergmagent(setting1, setting2, **kwargs)
@@ -49,7 +49,7 @@ class Pshavergmagent(Agent):
     def __init__(self, setting1=1, setting2="some/random/topic", **kwargs):
         super(Pshavergmagent, self).__init__(**kwargs)
         _log.debug("vip_identity: " + self.core.identity)
-
+        self.BEMStag=0
         self.setting1 = setting1
         self.setting2 = setting2
         self.BEMStag = setting1
@@ -80,7 +80,7 @@ class Pshavergmagent(Agent):
         _log.debug("Configuring Agent")
 
         try:
-            setting1 = int(config["setting1"])
+            setting1 = (config["setting1"])
             setting2 = str(config["setting2"])
         except ValueError as e:
             _log.error("ERROR PROCESSING CONFIGURATION: {}".format(e))
